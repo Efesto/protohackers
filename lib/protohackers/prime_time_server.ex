@@ -18,7 +18,9 @@ defmodule Protohackers.PrimeTimeServer do
       mode: :binary,
       active: false,
       reuseaddr: true,
-      exit_on_close: false
+      exit_on_close: false,
+      packet: :line,
+      buffer: 1024 * 100
     ]
 
     case :gen_tcp.listen(port, listen_options) do
@@ -49,8 +51,6 @@ defmodule Protohackers.PrimeTimeServer do
   end
 
   defp handle_connection(socket) do
-    :inet.setopts(socket, packet: :line)
-
     with {:error, reason} <- recv_until_valid_or_closed(socket) do
       Logger.error("Failed to receive data: #{inspect(reason)}")
     end
@@ -58,12 +58,11 @@ defmodule Protohackers.PrimeTimeServer do
     :gen_tcp.close(socket)
   end
 
-  @request_separator "\n"
+  @request_separator ?\n
+
   defp recv_until_valid_or_closed(socket) do
     case :gen_tcp.recv(socket, 0, 10_000) do
       {:ok, data} ->
-        Logger.debug("Parsing data: #{inspect(data)}")
-
         case parse_request(data) do
           {:ok, response} ->
             :gen_tcp.send(socket, [Jason.encode!(response), @request_separator])
@@ -84,10 +83,18 @@ defmodule Protohackers.PrimeTimeServer do
   defp parse_request(request) do
     case Jason.decode(request) do
       {:ok, %{"method" => "isPrime", "number" => number}} when is_number(number) ->
-        {:ok, %{method: "isPrime", prime: Prime.test(number)}}
+        {:ok, %{method: "isPrime", prime: prime?(number)}}
 
       _ ->
         {:error, :malformed_request}
     end
+  end
+
+  defp prime?(number) when is_float(number), do: false
+  defp prime?(number) when number <= 1, do: false
+  defp prime?(number) when number in [2, 3], do: true
+
+  defp prime?(number) do
+    not Enum.any?(2..trunc(:math.sqrt(number)), &(rem(number, &1) == 0))
   end
 end

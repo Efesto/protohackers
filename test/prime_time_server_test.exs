@@ -2,8 +2,8 @@ defmodule Protohackers.PrimeTimeServerTest do
   use ExUnit.Case, async: true
 
   test "accepts a requests and replies to each" do
-    {:ok, socket} = :gen_tcp.connect(~c"localhost", 5003, mode: :binary, active: false)
-    :inet.setopts(socket, packet: :line)
+    {:ok, socket} =
+      :gen_tcp.connect(~c"localhost", 5003, mode: :binary, active: false, packet: :line)
 
     assert :gen_tcp.send(socket, "{\"method\":\"isPrime\",\"number\":13}\n") == :ok
 
