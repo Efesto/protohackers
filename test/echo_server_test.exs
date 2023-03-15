@@ -8,10 +8,11 @@ defmodule Protohackers.EchoServerTest do
       :ok = :gen_tcp.close(socket)
     end)
 
-    assert :gen_tcp.send(socket, "hey there") == :ok
+    assert :gen_tcp.send(socket, "hey") == :ok
+    assert :gen_tcp.send(socket, "there") == :ok
     :gen_tcp.shutdown(socket, :write)
 
-    assert :gen_tcp.recv(socket, 0, 5000) == {:ok, "hey there"}
+    assert :gen_tcp.recv(socket, 0, 5000) == {:ok, "heythere"}
   end
 
   test "accepts multiple concurrent connections" do
