@@ -62,12 +62,14 @@ defmodule Protohackers.PrimeTimeServer do
       {:ok, data} ->
         # this assumes that data is always a valid request
 
+        Logger.debug("Parsing data: #{inspect(data)}")
+
         case process_data(data) do
           {:ok, response} ->
             recv_until_valid_or_closed(socket, [buffer, response])
 
           {:error, response} ->
-            {:ok, response}
+            {:ok, [buffer, response]}
         end
 
       {:error, :closed} ->
@@ -83,6 +85,7 @@ defmodule Protohackers.PrimeTimeServer do
   defp process_data(data) do
     response =
       data
+      |> String.trim()
       |> String.split(@request_separator)
       |> Enum.reduce_while(_response = "", fn request, acc ->
         case parse_request(request) do
@@ -98,8 +101,6 @@ defmodule Protohackers.PrimeTimeServer do
   end
 
   defp parse_request(request) do
-    Logger.debug("Parsing request: #{inspect(request)}")
-
     case Jason.decode(request) do
       {:ok, %{"method" => "isPrime", "number" => number}} when is_number(number) ->
         {:ok, %{method: "isPrime", prime: Prime.test(number)}}
