@@ -49,15 +49,14 @@ defmodule Protohackers.PrimeTimeServer do
   end
 
   defp handle_connection(socket) do
-    case recv_until_valid_or_closed(socket, _buffer = "") do
-      {:ok, data} -> :gen_tcp.send(socket, data)
-      {:error, reason} -> Logger.error("Failed to receive data: #{inspect(reason)}")
+    with {:error, reason} <- recv_until_valid_or_closed(socket) do
+      Logger.error("Failed to receive data: #{inspect(reason)}")
     end
 
     :gen_tcp.close(socket)
   end
 
-  defp recv_until_valid_or_closed(socket, buffer) do
+  defp recv_until_valid_or_closed(socket) do
     case :gen_tcp.recv(socket, 0, 10_000) do
       {:ok, data} ->
         # this assumes that data is always a valid request
@@ -66,14 +65,15 @@ defmodule Protohackers.PrimeTimeServer do
 
         case process_data(data) do
           {:ok, response} ->
-            recv_until_valid_or_closed(socket, [buffer, response])
+            :gen_tcp.send(socket, response)
+            recv_until_valid_or_closed(socket)
 
           {:error, response} ->
-            {:ok, [buffer, response]}
+            :gen_tcp.send(socket, response)
         end
 
       {:error, :closed} ->
-        {:ok, buffer}
+        :ok
 
       {:error, reason} ->
         {:error, reason}
