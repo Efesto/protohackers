@@ -49,6 +49,8 @@ defmodule Protohackers.PrimeTimeServer do
   end
 
   defp handle_connection(socket) do
+    :inet.setopts(socket, packet: :line)
+
     with {:error, reason} <- recv_until_valid_or_closed(socket) do
       Logger.error("Failed to receive data: #{inspect(reason)}")
     end
@@ -56,20 +58,19 @@ defmodule Protohackers.PrimeTimeServer do
     :gen_tcp.close(socket)
   end
 
+  @request_separator "\n"
   defp recv_until_valid_or_closed(socket) do
     case :gen_tcp.recv(socket, 0, 10_000) do
       {:ok, data} ->
-        # this assumes that data is always a valid request
-
         Logger.debug("Parsing data: #{inspect(data)}")
 
-        case process_data(data) do
+        case parse_request(data) do
           {:ok, response} ->
-            :gen_tcp.send(socket, response)
+            :gen_tcp.send(socket, [Jason.encode!(response), @request_separator])
             recv_until_valid_or_closed(socket)
 
-          {:error, response} ->
-            :gen_tcp.send(socket, response)
+          {:error, :malformed_request} ->
+            :gen_tcp.send(socket, ["noop", @request_separator])
         end
 
       {:error, :closed} ->
@@ -77,26 +78,6 @@ defmodule Protohackers.PrimeTimeServer do
 
       {:error, reason} ->
         {:error, reason}
-    end
-  end
-
-  @request_separator "\n"
-
-  defp process_data(data) do
-    response =
-      data
-      |> String.trim()
-      |> String.split(@request_separator)
-      |> Enum.reduce_while(_response = "", fn request, acc ->
-        case parse_request(request) do
-          {:ok, response} -> {:cont, [acc, Jason.encode!(response) <> @request_separator]}
-          {:error, :malformed_request} -> {:halt, {:error, [acc, "noop#{@request_separator}"]}}
-        end
-      end)
-
-    case response do
-      {:error, response} -> {:error, response}
-      response -> {:ok, response}
     end
   end
 

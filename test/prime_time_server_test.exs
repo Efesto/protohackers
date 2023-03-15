@@ -3,6 +3,7 @@ defmodule Protohackers.PrimeTimeServerTest do
 
   test "accepts a requests and replies to each" do
     {:ok, socket} = :gen_tcp.connect(~c"localhost", 5003, mode: :binary, active: false)
+    :inet.setopts(socket, packet: :line)
 
     assert :gen_tcp.send(socket, "{\"method\":\"isPrime\",\"number\":13}\n") == :ok
 
@@ -17,13 +18,9 @@ defmodule Protohackers.PrimeTimeServerTest do
 
     assert :gen_tcp.send(socket, request) == :ok
 
-    expected_response = """
-    {\"method\":\"isPrime\",\"prime\":false}
-    {\"method\":\"isPrime\",\"prime\":false}
-    noop
-    """
-
-    assert :gen_tcp.recv(socket, 0, 10000) == {:ok, expected_response}
+    assert :gen_tcp.recv(socket, 0, 10000) == {:ok, "{\"method\":\"isPrime\",\"prime\":false}\n"}
+    assert :gen_tcp.recv(socket, 0, 10000) == {:ok, "{\"method\":\"isPrime\",\"prime\":false}\n"}
+    assert :gen_tcp.recv(socket, 0, 10000) == {:ok, "noop\n"}
     assert :gen_tcp.recv(socket, 0, 5000) == {:error, :closed}
   end
 end
