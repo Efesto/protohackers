@@ -9,6 +9,7 @@ defmodule Protohackers.EchoServerTest do
     end)
 
     assert :gen_tcp.send(socket, "hey") == :ok
+    :timer.sleep(10)
     assert :gen_tcp.send(socket, "there") == :ok
     :gen_tcp.shutdown(socket, :write)
 
