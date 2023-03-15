@@ -1,4 +1,4 @@
-defmodule Protohackers.EchoServer do
+defmodule Protohackers.PrimeTimeServer do
   use GenServer
 
   require Logger
@@ -49,7 +49,7 @@ defmodule Protohackers.EchoServer do
   end
 
   defp handle_connection(socket) do
-    case recv_until_closed(socket, _buffer = "") do
+    case recv_until_valid_or_closed(socket, _buffer = "") do
       {:ok, data} -> :gen_tcp.send(socket, data)
       {:error, reason} -> Logger.error("Failed to receive data: #{inspect(reason)}")
     end
@@ -57,16 +57,55 @@ defmodule Protohackers.EchoServer do
     :gen_tcp.close(socket)
   end
 
-  defp recv_until_closed(socket, buffer) do
+  defp recv_until_valid_or_closed(socket, buffer) do
     case :gen_tcp.recv(socket, 0, 10_000) do
       {:ok, data} ->
-        recv_until_closed(socket, [buffer, data])
+        # this assumes that data is always a valid request
+
+        case process_data(data) do
+          {:ok, response} ->
+            recv_until_valid_or_closed(socket, [buffer, response])
+
+          {:error, response} ->
+            {:ok, response}
+        end
 
       {:error, :closed} ->
         {:ok, buffer}
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  @request_separator "\n"
+
+  defp process_data(data) do
+    response =
+      data
+      |> String.split(@request_separator)
+      |> Enum.reduce_while(_response = "", fn request, acc ->
+        case parse_request(request) do
+          {:ok, response} -> {:cont, [acc, Jason.encode!(response) <> @request_separator]}
+          {:error, :malformed_request} -> {:halt, {:error, [acc, "noop#{@request_separator}"]}}
+        end
+      end)
+
+    case response do
+      {:error, response} -> {:error, response}
+      response -> {:ok, response}
+    end
+  end
+
+  defp parse_request(request) do
+    Logger.debug("Parsing request: #{inspect(request)}")
+
+    case Jason.decode(request) do
+      {:ok, %{"method" => "isPrime", "number" => number}} when is_number(number) ->
+        {:ok, %{method: "isPrime", prime: Prime.test(number)}}
+
+      _ ->
+        {:error, :malformed_request}
     end
   end
 end

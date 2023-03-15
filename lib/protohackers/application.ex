@@ -3,13 +3,15 @@ defmodule Protohackers.Application do
   # for more information on OTP Applications
   @moduledoc false
   alias Protohackers.EchoServer
+  alias Protohackers.PrimeTimeServer
 
   use Application
 
   @impl true
   def start(_type, _args) do
     children = [
-      {EchoServer, port: 5002}
+      {EchoServer, port: 5002},
+      {PrimeTimeServer, port: 5003}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
