@@ -27,10 +27,10 @@ defmodule Protohackers.BankServerTest do
   end
 
   defp query_message(min_time, max_time) do
-    <<51>> <> <<min_time::32>> <> <<max_time::32>>
+    "Q" <> <<min_time::32>> <> <<max_time::32>>
   end
 
   defp insert_message(timestamp, price) do
-    <<49>> <> <<timestamp::32>> <> <<price::32>>
+    "I" <> <<timestamp::32>> <> <<price::32>>
   end
 end

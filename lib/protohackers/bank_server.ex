@@ -58,12 +58,12 @@ defmodule Protohackers.BankServer do
 
   defp recv_until_closed(socket, session) do
     case :gen_tcp.recv(socket, _message_size = 9, 10_000) do
-      {:ok, <<51>> <> <<min_time::32>> <> <<max_time::32>>} ->
+      {:ok, "Q" <> <<min_time::32>> <> <<max_time::32>>} ->
         mean_value = average(session, min_time, max_time)
         :gen_tcp.send(socket, <<mean_value::32>>)
         recv_until_closed(socket, session)
 
-      {:ok, <<49>> <> <<timestamp::32>> <> <<value::32>>} ->
+      {:ok, "I" <> <<timestamp::32>> <> <<value::32>>} ->
         recv_until_closed(socket, insert(session, timestamp, value))
 
       {:error, :closed} ->
