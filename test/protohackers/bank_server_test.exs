@@ -7,6 +7,9 @@ defmodule Protohackers.BankServerTest do
     assert :gen_tcp.send(socket, query_message(0, 1000)) == :ok
     assert :gen_tcp.recv(socket, 4, 5000) == {:ok, <<0::32>>}
 
+    assert :gen_tcp.send(socket, query_message(1000, 0)) == :ok
+    assert :gen_tcp.recv(socket, 4, 5000) == {:ok, <<0::32>>}
+
     assert :gen_tcp.send(socket, insert_message(12345, 101)) == :ok
     assert :gen_tcp.send(socket, insert_message(12346, 102)) == :ok
     assert :gen_tcp.send(socket, insert_message(12347, 100)) == :ok
@@ -31,6 +34,6 @@ defmodule Protohackers.BankServerTest do
   end
 
   defp insert_message(timestamp, price) do
-    "I" <> <<timestamp::32>> <> <<price::32>>
+    "I" <> <<timestamp::32>> <> <<price::integer-signed-32>>
   end
 end

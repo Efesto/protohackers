@@ -60,10 +60,10 @@ defmodule Protohackers.BankServer do
     case :gen_tcp.recv(socket, _message_size = 9, 10_000) do
       {:ok, "Q" <> <<min_time::32>> <> <<max_time::32>>} ->
         mean_value = average(session, min_time, max_time)
-        :gen_tcp.send(socket, <<mean_value::32>>)
+        :gen_tcp.send(socket, <<mean_value::integer-signed-32>>)
         recv_until_closed(socket, session)
 
-      {:ok, "I" <> <<timestamp::32>> <> <<value::32>>} ->
+      {:ok, "I" <> <<timestamp::32>> <> <<value::integer-signed-32>>} ->
         recv_until_closed(socket, insert(session, timestamp, value))
 
       {:error, :closed} ->
@@ -75,7 +75,8 @@ defmodule Protohackers.BankServer do
   end
 
   defp insert(session, timestamp, value) do
-    session ++ [{timestamp, value}]
+    Logger.debug("Insert #{inspect({timestamp, value})}")
+    [{timestamp, value}] ++ session
   end
 
   defp average(session, min_time, max_time) do
