@@ -12,15 +12,17 @@ defmodule Protohackers.PrimeTimeServer do
   @impl true
   def init(opts) do
     port = Keyword.fetch!(opts, :port)
+
     {:ok, supervisor} = Task.Supervisor.start_link(max_children: 100)
 
+    # see https://www.erlang.org/doc/man/inet.html#setopts-2 for options
     listen_options = [
       mode: :binary,
       active: false,
       reuseaddr: true,
       exit_on_close: false,
       packet: :line,
-      buffer: 1024 * 100
+      buffer: _100_kb = 1024 * 100
     ]
 
     case :gen_tcp.listen(port, listen_options) do
@@ -37,7 +39,7 @@ defmodule Protohackers.PrimeTimeServer do
   def handle_continue(:accept, %__MODULE__{} = state) do
     case :gen_tcp.accept(state.listen_socket) do
       {:ok, socket} ->
-        Logger.debug("Received connection to #{inspect(__MODULE__)}")
+        Logger.debug("Received connection to: #{inspect(__MODULE__)}")
 
         Task.Supervisor.start_child(state.supervisor, fn ->
           handle_connection(socket)
