@@ -4,6 +4,7 @@ defmodule Protohackers.Application do
   @moduledoc false
   alias Protohackers.EchoServer
   alias Protohackers.PrimeTimeServer
+  alias Protohackers.BankServer
 
   use Application
 
@@ -11,7 +12,8 @@ defmodule Protohackers.Application do
   def start(_type, _args) do
     children = [
       {EchoServer, port: 5002},
-      {PrimeTimeServer, port: 5003}
+      {PrimeTimeServer, port: 5003},
+      {BankServer, port: 5004}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
