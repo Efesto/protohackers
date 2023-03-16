@@ -57,6 +57,8 @@ defmodule Protohackers.BankServer do
   end
 
   defp recv_until_closed(socket, session) do
+    # see https://www.erlang.org/doc/reference_manual/expressions.html#bit-syntax-expressions for bit syntax expression
+
     case :gen_tcp.recv(socket, _message_size = 9, 10_000) do
       {:ok, "Q" <> <<min_time::32-signed-big>> <> <<max_time::32-signed-big>>} ->
         mean_value = average(session, min_time, max_time)
