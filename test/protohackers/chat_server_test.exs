@@ -1,4 +1,4 @@
-defmodule Protohackers.EchoServerTest do
+defmodule Protohackers.ChatServerTest do
   use ExUnit.Case, async: true
 
   test "accepts multiple user connections" do

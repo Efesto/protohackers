@@ -8,19 +8,19 @@ processes = []
 [env]
 
 [experimental]
-  auto_rollback = true
+auto_rollback = true
 
 [[services]]
-  http_checks = []
-  internal_port = 5004
-  processes = ["app"]
-  protocol = "tcp"
-  script_checks = []
-  [services.concurrency]
-    hard_limit = 25
-    soft_limit = 20
-    type = "connections"
+http_checks = []
+internal_port = 5005
+processes = ["app"]
+protocol = "tcp"
+script_checks = []
+[services.concurrency]
+hard_limit = 25
+soft_limit = 20
+type = "connections"
 
-  [[services.ports]]
-    handlers = []
-    port = 5004
+[[services.ports]]
+handlers = []
+port = 5005

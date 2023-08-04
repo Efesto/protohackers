@@ -120,18 +120,22 @@ defmodule Protohackers.ChatServer do
   defp handle_connection(socket) do
     :gen_tcp.send(socket, "Welcome to budgetchat! What shall I call you?")
 
-    {:ok, name} = :gen_tcp.recv(socket, 0, 10_000)
+    case :gen_tcp.recv(socket, 0, 10_000) do
+      {:ok, name} ->
+        new_user = %User{name: String.trim(name), socket: socket}
 
-    new_user = %User{name: String.trim(name), socket: socket}
+        GenServer.call(
+          __MODULE__.Session,
+          {:join, new_user},
+          5000
+        )
 
-    GenServer.call(
-      __MODULE__.Session,
-      {:join, new_user},
-      5000
-    )
+        with {:error, reason} <- recv_until_valid_or_closed(new_user) do
+          Logger.error("Failed to receive data: #{inspect(reason)}")
+        end
 
-    with {:error, reason} <- recv_until_valid_or_closed(new_user) do
-      Logger.error("Failed to receive data: #{inspect(reason)}")
+      other ->
+        other
     end
 
     :gen_tcp.close(socket)
