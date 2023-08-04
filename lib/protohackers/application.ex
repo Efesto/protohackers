@@ -2,19 +2,22 @@ defmodule Protohackers.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   @moduledoc false
-  alias Protohackers.EchoServer
-  alias Protohackers.PrimeTimeServer
-  alias Protohackers.BankServer
 
   use Application
 
+  @servers [
+    Protohackers.EchoServer,
+    Protohackers.PrimeTimeServer,
+    Protohackers.BankServer,
+    Protohackers.ChatServer
+  ]
+
   @impl true
   def start(_type, _args) do
-    children = [
-      {EchoServer, port: 5002},
-      {PrimeTimeServer, port: 5003},
-      {BankServer, port: 5004}
-    ]
+    {children, _} =
+      Enum.map_reduce(@servers, 5002, fn server, port ->
+        {{server, port: port}, port + 1}
+      end)
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
